@@ -5,7 +5,7 @@ Instructions
 *** Inside the logistic 11-4 ***
 
 1. cd to the back folder 
-2. run npm install first
+2. run "npm install" first
 3. Use "node lback.js" to start the backend server
 4. "cd .." to previous folder 
 5. run "npm install" for install the modules
