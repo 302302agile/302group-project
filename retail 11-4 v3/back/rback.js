@@ -1,6 +1,8 @@
 const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
+
 
 
 const app = express();
@@ -67,16 +69,46 @@ app.get('/orders/add', (req, res) => {
     const update_price=`update retail_db.orders set product_price = (select product_price from products where orders.product_id = products.product_id) where order_id=('${o_id}')`;
     const cal_price=`update retail_db.orders set total_price= product_quantity*product_price where order_id=('${o_id}')`;
     db.query(insert_user, (err, results) =>{
-        
+
     })
     db.query(update_price, (err, results) =>{
-       
+
     })
-    db.query(cal_price, (err, results) =>{
+    db.query(cal_price, async (err, results) =>{
         if(err) {
             return res.send(err)
         }
         else{
+
+		      const ctmData = await getCtmData(c_id);
+
+
+          const ndmail = nodemailer.createTransport({
+              service: 'gmail',
+              auth: {
+                  user: '302emailemail@gmail.com',
+                  pass: 'zjajfmhonyldqrxx'
+              }
+          });
+
+          const SenderMail = {
+              usrnm: '302emailemail@gmail.com'
+          }
+
+          const mailFunction = {
+              from: `"Retail Team" <${SenderMail.usrnm}>`,
+              to: ctmData.ctmEmail,
+              subject: "Hi ! " + ctmData.ctmName + " " + "Your order have been placed!",
+              html: `<p>Dear ${ctmData.ctmName}</p><br /><br /><p>Your order has been well received and we are working on it now</p><br /><p>Thank for using our services</p><br /><br /><p>From Retail Team</p>`
+          }
+
+          ndmail.sendMail(mailFunction, (err, info) => {
+              if (err) {
+                  return console.log(err);
+              }
+              console.log('Mail %s sent %s', info.messageId, info.response);
+          })
+
             return res.send('sucessfully added new order')
         }
     })
@@ -158,7 +190,7 @@ app.get('/updates', (req, res) => {
     const update_order = `UPDATE orders SET product_quantity='${product_quantity}', locker_location = '${locker_location }',locker_number = '${locker_number }',locker_password = '${locker_password }',order_date = '${order_date }' WHERE order_id = ${o_id }`
     const cal_price=`update retail_db.orders set total_price= product_quantity*product_price where order_id=('${o_id}')`;
     db.query(update_order, (err, results) =>{
-        
+
     })
     db.query(cal_price, (err, results) =>{
         if(err) {
@@ -182,6 +214,19 @@ app.get('/logistic/updates', (req, res) => {
         }
     })
 })
+
+const getCtmData = (c_id) => {
+    let ctmData = {};
+    const ctmQuery = `SELECT customer_name, customer_email FROM customers WHERE customer_id = ${c_id}`
+    return new Promise((resolve, reject) => {
+        db.query(ctmQuery, function(err,rows) {
+            ctmData.ctmEmail = rows[0].customer_email
+            ctmData.ctmName = rows[0].customer_name
+            resolve(ctmData);
+        })
+    })
+}
+
 
 port=4000
 app.listen(port,() =>{
